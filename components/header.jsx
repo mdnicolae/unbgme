@@ -1,10 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import logo from 'public/logo.svg';
-import githubLogo from 'public/images/github-mark-white.svg';
+import linkedinLogo from 'public/images/linkedin.svg';
+import bmcLogo from 'public/images/bmc.svg';
+import instagramLogo from 'public/images/instagram.svg';
 
 const navItems = [
-    { linkText: 'Home', href: '/' },
+    // { linkText: 'Home', href: '/' },
     // { linkText: 'Revalidation', href: '/revalidation' },
     // { linkText: 'Image CDN', href: '/image-cdn' },
     // { linkText: 'Edge Function', href: '/edge' },
@@ -14,7 +16,7 @@ const navItems = [
 
 export function Header() {
     return (
-        <nav className="flex flex-wrap items-center gap-4 pt-6 pb-12 sm:pt-12 md:pb-24">
+        <nav className="flex flex-wrap items-center gap-4">
             <Link href="/">
                 <Image src={logo} alt="unbg.me logo" />
             </Link>
@@ -32,13 +34,27 @@ export function Header() {
                     ))}
                 </ul>
             )}
-            <div className="flex-grow justify-end hidden lg:flex lg:mr-1">
+            <div className="flex flex-col items-center sm:flex-row sm:justify-end flex-grow lg:mr-1">
                 <Link
-                    href="https://github.com/netlify-templates/next-platform-starter"
+                    href="https://buymeacoffee.com/mdnicolae"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    <Image src={githubLogo} alt="GitHub logo" className="w-7" />
+                    <Image src={bmcLogo} alt="BuyMeACoffee Logo" className="w-7 h-7 mb-2 sm:mb-0 sm:mr-7" />
+                </Link>
+                <Link
+                    href="https://www.linkedin.com/in/m-nicolae/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <Image src={linkedinLogo} alt="Linkedin Logo" className="w-7 h-7 mb-2 sm:mb-0 sm:mr-7" />
+                </Link>
+                <Link
+                    href="https://www.instagram.com/m.d.nicolae/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <Image src={instagramLogo} alt="Instagram Logo" className="w-7 h-7" />
                 </Link>
             </div>
         </nav>
