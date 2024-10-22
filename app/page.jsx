@@ -26,26 +26,41 @@ export default function Page() {
 
             // Sending each file request in parallel
             return axios.post(uploadServer, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' },
+                responseType: 'blob', // Important: Set response type to blob
             });
         });
 
         try {
             const responses = await Promise.all(uploadPromises);
+
             // Download all beautified images after successful uploads
             responses.forEach(response => {
-                //Download image contained in the response
-                const url = window.URL.createObjectURL(new Blob([response.data]));
+                // Create a Blob from the response with the correct MIME type
+                const blob = new Blob([response.data], { type: 'image/png' });
+
+                // Create an object URL for the blob
+                const url = window.URL.createObjectURL(blob);
+
+                // Create a link to download the image
                 const link = document.createElement('a');
                 link.href = url;
-                //unique ids for each image
-                let filename = 'unbgme-' + uuidv4() + '.png';
+
+                // Generate a unique filename
+                const filename = 'unbgme-' + uuidv4() + '.png';
                 link.setAttribute('download', filename);
+
+                // Append link to the document and trigger click to download the image
                 document.body.appendChild(link);
                 link.click();
+
+                // Clean up: remove the link and revoke the object URL
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
             });
+
             message.success('All images have been processed and downloaded!');
-            //Clear list with uploaded files
+            // Clear list with uploaded files
             setFiles([]);
         } catch (error) {
             message.error('Failed to upload some images.');
@@ -53,6 +68,7 @@ export default function Page() {
             setLoading(false);
         }
     };
+
 
     return (
         <main className="flex flex-col gap-8 sm:gap-16">
