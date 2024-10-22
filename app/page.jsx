@@ -9,7 +9,7 @@ export default function Page() {
     const [loading, setLoading] = useState(false);
     const [files, setFiles] = useState([]);
 
-    const uploadServer = `http://api.nicolae.tech/api/upload`; // Your backend URL
+    const uploadServer = `https://api.nicolae.tech/api/upload`; // Your backend URL
 
     // Handle file upload
     const handleUpload = async () => {
