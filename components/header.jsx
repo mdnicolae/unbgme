@@ -49,13 +49,6 @@ export function Header() {
                 >
                     <Image src={linkedinLogo} alt="Linkedin Logo" className="w-7 h-7 mb-2 sm:mb-0 sm:mr-7" />
                 </Link>
-                <Link
-                    href="https://www.instagram.com/m.d.nicolae/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Image src={instagramLogo} alt="Instagram Logo" className="w-7 h-7" />
-                </Link>
             </div>
         </nav>
     );

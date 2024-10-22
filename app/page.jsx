@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Upload, Button, message, Spin } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import {v4 as uuidv4} from 'uuid';
 
 export default function Page() {
     const [loading, setLoading] = useState(false);
@@ -37,11 +38,15 @@ export default function Page() {
                 const url = window.URL.createObjectURL(new Blob([response.data]));
                 const link = document.createElement('a');
                 link.href = url;
-                link.setAttribute('download', 'unbg.me.png');
+                //unique ids for each image
+                let filename = 'unbgme-' + uuidv4();
+                link.setAttribute('download', filename);
                 document.body.appendChild(link);
                 link.click();
             });
             message.success('All images have been processed and downloaded!');
+            //Clear list with uploaded files
+            setFiles([]);
         } catch (error) {
             message.error('Failed to upload some images.');
         } finally {
