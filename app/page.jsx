@@ -39,7 +39,7 @@ export default function Page() {
                 const link = document.createElement('a');
                 link.href = url;
                 //unique ids for each image
-                let filename = 'unbgme-' + uuidv4();
+                let filename = 'unbgme-' + uuidv4() + '.png';
                 link.setAttribute('download', filename);
                 document.body.appendChild(link);
                 link.click();
