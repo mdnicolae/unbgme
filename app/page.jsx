@@ -1,10 +1,9 @@
 "use client"; // This is a client component 👈🏽
 import { useState } from 'react';
-import Link from 'next/link';
-import { Upload, Button, message, Spin } from 'antd';
+import { Button, message, Spin, Upload } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import axios from 'axios';
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function Page() {
     const [loading, setLoading] = useState(false);
@@ -20,16 +19,30 @@ export default function Page() {
         }
 
         setLoading(true);
+        let maxRetries = 3; // Number of retries
         const uploadPromises = files.map(file => {
             const formData = new FormData();
-            formData.append('file', file.originFileObj); // 'file' is the backend parameter name
+            formData.append('file', file.originFileObj);
 
-            // Sending each file request in parallel
-            return axios.post(uploadServer, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                responseType: 'blob', // Important: Set response type to blob
-            });
+            // Retry function
+            const uploadWithRetry = async (retryCount = 0) => {
+                try {
+                    return await axios.post(uploadServer, formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        responseType: 'blob'
+                    }); // Return response if successful
+                } catch (error) {
+                    if (error.response && error.response.status === 502 && retryCount < maxRetries) {
+                        console.log(`Retrying... (${retryCount + 1})`);
+                        return uploadWithRetry(retryCount + 1); // Retry
+                    }
+                    throw error; // Throw error if retries exhausted or different error
+                }
+            };
+
+            return uploadWithRetry(); // Call retry function
         });
+
 
         try {
             const responses = await Promise.all(uploadPromises);
@@ -79,6 +92,7 @@ export default function Page() {
                 <Upload
                     multiple
                     listType="picture-card"
+                    maxCount={8}
                     beforeUpload={() => false} // Prevent immediate upload; we'll handle it manually
                     onChange={({ fileList }) => setFiles(fileList)} // Track selected files
                 >
