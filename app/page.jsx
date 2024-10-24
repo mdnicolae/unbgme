@@ -99,7 +99,7 @@ export default function Page() {
 
             <section className="flex flex-col items-start gap-3 sm:gap-4 mt-10">
                 <h1 className="mb-3">Easily remove background to any image using LLMs</h1>
-                <p>All of the images are processed and returned by the server directly. We don't store any images.</p>
+                <p>All of the images are processed and returned by the server directly. We don&#39;t store any images.</p>
             </section>
             <section>
                 <Upload
