@@ -75,9 +75,11 @@ export default function Page() {
         // Show error or uploading status
         let overlayContent = null;
         if (status === 'uploading') {
-            overlayContent = <span className="text-sm text-secondary font-semibold">Uploading...</span>;
+            overlayContent = <span className="text-sm text-secondary font-semibold">Trying my best...</span>;
         } else if (status === 'error') {
-            overlayContent = <span className="text-sm text-primary font-semibold">Upload failed</span>;
+            overlayContent = <span className="text-sm text-primary font-semibold">Oups!</span>;
+        } else if (status === 'done') {
+            overlayContent = <span className="text-sm text-success font-semibold">unbged!</span>;
         }
 
         return (
