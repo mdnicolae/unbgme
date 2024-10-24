@@ -8,11 +8,34 @@ import { v4 as uuidv4 } from 'uuid';
 export default function Page() {
     const [loading, setLoading] = useState(false);
     const [files, setFiles] = useState([]);
-    const [uploadStatus, setUploadStatus] = useState({}); // Track upload status of each file
+    const [uploadStatus, setUploadStatus] = useState({});
 
     const uploadServer = `https://api.nicolae.tech/api/upload`; // Your backend URL
 
-    // Handle file upload
+    // Retry mechanism for file upload
+    const uploadWithRetry = async (file, maxRetries = 3) => {
+        const formData = new FormData();
+        formData.append('file', file.originFileObj);
+
+        let retries = 0;
+        while (retries <= maxRetries) {
+            try {
+                // Try uploading the file
+                const response = await axios.post(uploadServer, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    responseType: 'blob',
+                });
+                return response; // Success, return response
+            } catch (error) {
+                retries++;
+                if (retries > maxRetries) {
+                    throw error; // If retries are exhausted, throw error
+                }
+                console.log(`Retrying upload for ${file.name} (${retries}/${maxRetries})...`);
+            }
+        }
+    };
+
     const handleUpload = async () => {
         if (files.length === 0) {
             message.error('Please select images first.');
@@ -20,53 +43,24 @@ export default function Page() {
         }
 
         setLoading(true);
-        let maxRetries = 3; // Number of retries
 
-        // Upload files one by one
         for (const file of files) {
-            const formData = new FormData();
-            formData.append('file', file.originFileObj);
-
             setUploadStatus(prev => ({ ...prev, [file.uid]: 'started' }));
 
             try {
-                // Retry function
-                const uploadWithRetry = async (retryCount = 0) => {
-                    try {
-                        return await axios.post(uploadServer, formData, {
-                            headers: { 'Content-Type': 'multipart/form-data' },
-                            responseType: 'blob',
-                        });
-                    } catch (error) {
-                        if (error.response && error.response.status === 502 && retryCount < maxRetries) {
-                            console.log(`Retrying... (${retryCount + 1})`);
-                            return uploadWithRetry(retryCount + 1);
-                        }
-                        throw error;
-                    }
-                };
-
-                const response = await uploadWithRetry();
+                const response = await uploadWithRetry(file);
 
                 // Create a Blob from the response with the correct MIME type
                 const blob = new Blob([response.data], { type: 'image/png' });
-
-                // Create an object URL for the blob
                 const url = window.URL.createObjectURL(blob);
-
-                // Create a link to download the image
                 const link = document.createElement('a');
                 link.href = url;
-
-                // Generate a unique filename
                 const filename = 'unbgme-' + uuidv4() + '.png';
                 link.setAttribute('download', filename);
 
-                // Append link to the document and trigger click to download the image
+                // Trigger the download
                 document.body.appendChild(link);
                 link.click();
-
-                // Clean up: remove the link and revoke the object URL
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
 
@@ -77,8 +71,7 @@ export default function Page() {
             }
         }
 
-        // Clear list with uploaded files
-        setFiles([]);
+        setFiles([]); // Clear files after upload
         message.success('All images have been processed and downloaded!');
         setLoading(false);
     };
