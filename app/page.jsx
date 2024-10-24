@@ -8,9 +8,9 @@ import { v4 as uuidv4 } from 'uuid';
 export default function Page() {
     const [loading, setLoading] = useState(false);
     const [files, setFiles] = useState([]);
-    const [uploadStatus, setUploadStatus] = useState({});
+    const [uploadStatus, setUploadStatus] = useState({}); // Track status for each file
 
-    const uploadServer = `https://api.nicolae.tech/api/upload`; // Your backend URL
+    const uploadServer = `https://api.nicolae.tech/api/upload`;
 
     // Retry mechanism for file upload
     const uploadWithRetry = async (file, maxRetries = 3) => {
@@ -20,16 +20,14 @@ export default function Page() {
         let retries = 0;
         while (retries <= maxRetries) {
             try {
-                // Try uploading the file
-                const response = await axios.post(uploadServer, formData, {
+                return await axios.post(uploadServer, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                     responseType: 'blob',
                 });
-                return response; // Success, return response
             } catch (error) {
                 retries++;
                 if (retries > maxRetries) {
-                    throw error; // If retries are exhausted, throw error
+                    throw error;
                 }
                 console.log(`Retrying upload for ${file.name} (${retries}/${maxRetries})...`);
             }
@@ -45,12 +43,12 @@ export default function Page() {
         setLoading(true);
 
         for (const file of files) {
-            setUploadStatus(prev => ({ ...prev, [file.uid]: 'started' }));
+            setUploadStatus(prev => ({ ...prev, [file.uid]: 'uploading' }));
 
             try {
                 const response = await uploadWithRetry(file);
 
-                // Create a Blob from the response with the correct MIME type
+                // Handle successful file upload (download logic)
                 const blob = new Blob([response.data], { type: 'image/png' });
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -64,16 +62,39 @@ export default function Page() {
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
 
-                setUploadStatus(prev => ({ ...prev, [file.uid]: 'finished' }));
+                setUploadStatus(prev => ({ ...prev, [file.uid]: 'done' }));
             } catch (error) {
+                setUploadStatus(prev => ({ ...prev, [file.uid]: 'error' }));
                 message.error(`Failed to upload ${file.name}`);
-                setUploadStatus(prev => ({ ...prev, [file.uid]: 'failed' }));
             }
         }
 
-        setFiles([]); // Clear files after upload
-        message.success('All images have been processed and downloaded!');
+        setFiles([]);
+        message.success('All images have been processed!');
         setLoading(false);
+    };
+
+    const customItemRender = (originNode, file) => {
+        const status = uploadStatus[file.uid];
+
+        // Show error or uploading status
+        let overlayContent = null;
+        if (status === 'uploading') {
+            overlayContent = <span className="status-overlay">Uploading...</span>;
+        } else if (status === 'error') {
+            overlayContent = <span className="status-overlay error">Upload failed</span>;
+        }
+
+        return (
+            <div className={`thumbnail-wrapper ${status === 'error' ? 'error' : ''}`}>
+                {originNode}
+                {overlayContent && (
+                    <div className="overlay">
+                        {overlayContent}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -86,8 +107,13 @@ export default function Page() {
                     multiple
                     listType="picture-card"
                     maxCount={8}
-                    beforeUpload={() => false} // Prevent immediate upload; we'll handle it manually
+                    beforeUpload={() => false} // Prevent immediate upload
                     onChange={({ fileList }) => setFiles(fileList)} // Track selected files
+                    showUploadList={{
+                        showRemoveIcon: true, // Allow removing files
+                        showPreviewIcon: false, // Disable default preview
+                    }}
+                    itemRender={customItemRender} // Custom item render function
                 >
                     {files.length >= 8 ? null : <div>+ Add Image</div>} {/* Limit max to 8 */}
                 </Upload>
@@ -103,24 +129,35 @@ export default function Page() {
                 </Button>
 
                 {loading && <Spin tip="Processing images..." style={{ marginTop: 16 }} />}
-
-                <div className="file-status">
-                    {files.map(file => (
-                        <div key={file.uid} style={{ marginTop: 16 }}>
-                            <img
-                                src={URL.createObjectURL(file.originFileObj)}
-                                alt={file.name}
-                                style={{ width: 100, height: 100, objectFit: 'cover' }}
-                            />
-                            <p>
-                                {uploadStatus[file.uid] === 'started' && 'Uploading...'}
-                                {uploadStatus[file.uid] === 'finished' && 'Done!'}
-                                {uploadStatus[file.uid] === 'failed' && 'Failed'}
-                            </p>
-                        </div>
-                    ))}
-                </div>
             </section>
+
+            <style jsx>{`
+                .thumbnail-wrapper {
+                    position: relative;
+                }
+                .overlay {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 16px;
+                }
+                .status-overlay.error {
+                    background-color: red;
+                    padding: 4px;
+                    border-radius: 4px;
+                }
+                .error .ant-upload-list-item-thumbnail {
+                    border: 2px solid red;
+                }
+            `}</style>
         </main>
     );
 }
