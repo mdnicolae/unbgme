@@ -34,3 +34,17 @@ a {
 .btn:disabled {
     @apply text-neutral-400 bg-neutral-700;
 }
+
+.upload-btn {
+    @apply text-white;
+}
+
+.upload-btn:disabled {
+    @apply text-black;
+}
+
+.upload-btn:hover {
+    @apply text-white;
+}
+
+

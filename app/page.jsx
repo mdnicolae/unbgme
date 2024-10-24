@@ -96,8 +96,10 @@ export default function Page() {
 
     return (
         <main className="flex flex-col gap-8 sm:gap-16">
-            <section className="flex flex-col items-start gap-3 sm:gap-4">
-                <h1 className="mb-0">Easily remove background to any image using LLMs</h1>
+
+            <section className="flex flex-col items-start gap-3 sm:gap-4 mt-10">
+                <h1 className="mb-3">Easily remove background to any image using LLMs</h1>
+                <p>All of the images are processed and returned by the server directly. We don't store any images.</p>
             </section>
             <section>
                 <Upload
@@ -115,15 +117,16 @@ export default function Page() {
                     {files.length >= 8 ? null : <div>+ Add Image</div>} {/* Limit max to 8 */}
                 </Upload>
 
-                <Button
-                    icon={<UploadOutlined />}
+                <button
                     onClick={handleUpload}
                     disabled={files.length === 0}
-                    type="primary"
-                    className="btn btn-lg btn-primary sm:btn-wide mt-12"
+                    className={`btn btn-lg btn-primary upload-btn sm:btn-wide mt-12 flex items-center justify-center ${
+                        files.length === 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    } rounded-lg `}
                 >
+                    <UploadOutlined className="mr-2" /> {/* You can still use the icon from `@ant-design/icons` */}
                     unbg.me
-                </Button>
+                </button>
             </section>
         </main>
     );
