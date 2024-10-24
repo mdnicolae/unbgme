@@ -77,9 +77,9 @@ export default function Page() {
         if (status === 'uploading') {
             overlayContent = <span className="text-sm text-secondary font-semibold">Trying my best...</span>;
         } else if (status === 'error') {
-            overlayContent = <span className="text-sm text-primary font-semibold">Oups!</span>;
+            overlayContent = <span className="text-sm text-orange-300 font-semibold">Oups!</span>;
         } else if (status === 'done') {
-            overlayContent = <span className="text-sm text-success font-semibold">unbged!</span>;
+            overlayContent = <span className="text-sm text-primary font-semibold">unbged!</span>;
         }
 
         return (
@@ -120,7 +120,7 @@ export default function Page() {
                     onClick={handleUpload}
                     disabled={files.length === 0}
                     type="primary"
-                    className="btn btn-lg btn-primary sm:btn-wide mt-8"
+                    className="btn btn-lg btn-primary sm:btn-wide mt-12"
                 >
                     unbg.me
                 </Button>
