@@ -10,9 +10,13 @@ module.exports = {
             },
             colors: {
                 neutral: colors.neutral,
-                red: '#f13800ff',
+                red: {
+                    DEFAULT: '#f13800ff',  // This sets the default red for `text-red`
+                    dark: '#c03000ff'      // You can also add more shades, like `text-red-dark`
+                },
                 primary: '#362338ff',
                 white: '#ffffff',
+                warning: '#f5a623',
             },
             fontFamily: {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans]

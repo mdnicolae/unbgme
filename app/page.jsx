@@ -75,18 +75,18 @@ export default function Page() {
         // Show error or uploading status
         let overlayContent = null;
         if (status === 'uploading') {
-            overlayContent = <span className="text-sm text-secondary font-semibold">Trying my best...</span>;
+            overlayContent = <span className="text-sm text-secondary font-semibold">Trying...</span>;
         } else if (status === 'error') {
-            overlayContent = <span className="text-sm text-orange-300 font-semibold">Oups!</span>;
+            overlayContent = <span className="text-sm text-warning font-semibold">Oups!</span>;
         } else if (status === 'done') {
-            overlayContent = <span className="text-sm text-primary font-semibold">unbged!</span>;
+            overlayContent = <span className="text-sm text-red font-semibold">unbged!</span>;
         }
 
         return (
             <div className={`thumbnail-wrapper ${status === 'error' ? 'error' : ''}`}>
                 {originNode}
                 {overlayContent && (
-                    <div className="overlay">
+                    <div className="text-center justify-center justify-items-center">
                         {overlayContent}
                     </div>
                 )}
