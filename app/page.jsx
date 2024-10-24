@@ -6,7 +6,6 @@ import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function Page() {
-    const [loading, setLoading] = useState(false);
     const [files, setFiles] = useState([]);
     const [uploadStatus, setUploadStatus] = useState({}); // Track status for each file
 
@@ -40,8 +39,6 @@ export default function Page() {
             return;
         }
 
-        setLoading(true);
-
         for (const file of files) {
             setUploadStatus(prev => ({ ...prev, [file.uid]: 'uploading' }));
 
@@ -70,8 +67,6 @@ export default function Page() {
         }
 
         setFiles([]);
-        message.success('All images have been processed!');
-        setLoading(false);
     };
 
     const customItemRender = (originNode, file) => {
@@ -80,9 +75,9 @@ export default function Page() {
         // Show error or uploading status
         let overlayContent = null;
         if (status === 'uploading') {
-            overlayContent = <span className="status-overlay">Uploading...</span>;
+            overlayContent = <span className="text-sm text-secondary font-semibold">Uploading...</span>;
         } else if (status === 'error') {
-            overlayContent = <span className="status-overlay error">Upload failed</span>;
+            overlayContent = <span className="text-sm text-primary font-semibold">Upload failed</span>;
         }
 
         return (
@@ -123,41 +118,11 @@ export default function Page() {
                     onClick={handleUpload}
                     disabled={files.length === 0}
                     type="primary"
-                    className="btn btn-lg btn-primary sm:btn-wide mt-4"
+                    className="btn btn-lg btn-primary sm:btn-wide mt-8"
                 >
                     unbg.me
                 </Button>
-
-                {loading && <Spin tip="Processing images..." style={{ marginTop: 16 }} />}
             </section>
-
-            <style jsx>{`
-                .thumbnail-wrapper {
-                    position: relative;
-                }
-                .overlay {
-                    position: absolute;
-                    top: 0;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: bold;
-                    font-size: 16px;
-                }
-                .status-overlay.error {
-                    background-color: red;
-                    padding: 4px;
-                    border-radius: 4px;
-                }
-                .error .ant-upload-list-item-thumbnail {
-                    border: 2px solid red;
-                }
-            `}</style>
         </main>
     );
 }
