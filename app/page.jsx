@@ -8,26 +8,9 @@ import { v4 as uuidv4 } from 'uuid';
 export default function Page() {
     const [loading, setLoading] = useState(false);
     const [files, setFiles] = useState([]);
+    const [uploadStatus, setUploadStatus] = useState({}); // Track upload status of each file
 
     const uploadServer = `https://api.nicolae.tech/api/upload`; // Your backend URL
-
-    // Helper function to trigger file download
-    const triggerDownload = (url, filename) => {
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-
-        // Check for mobile browser to handle download differently
-        if (/Mobi|Android/i.test(navigator.userAgent)) {
-            window.open(url); // Mobile browser fallback
-        } else {
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        window.URL.revokeObjectURL(url);
-    };
 
     // Handle file upload
     const handleUpload = async () => {
@@ -38,57 +21,66 @@ export default function Page() {
 
         setLoading(true);
         let maxRetries = 3; // Number of retries
-        const uploadPromises = files.map(file => {
+
+        // Upload files one by one
+        for (const file of files) {
             const formData = new FormData();
             formData.append('file', file.originFileObj);
 
-            // Retry function
-            const uploadWithRetry = async (retryCount = 0) => {
-                try {
-                    return await axios.post(uploadServer, formData, {
-                        headers: { 'Content-Type': 'multipart/form-data' },
-                        responseType: 'blob'
-                    }); // Return response if successful
-                } catch (error) {
-                    if (error.response && error.response.status === 502 && retryCount < maxRetries) {
-                        console.log(`Retrying... (${retryCount + 1})`);
-                        return uploadWithRetry(retryCount + 1); // Retry
+            setUploadStatus(prev => ({ ...prev, [file.uid]: 'started' }));
+
+            try {
+                // Retry function
+                const uploadWithRetry = async (retryCount = 0) => {
+                    try {
+                        return await axios.post(uploadServer, formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' },
+                            responseType: 'blob',
+                        });
+                    } catch (error) {
+                        if (error.response && error.response.status === 502 && retryCount < maxRetries) {
+                            console.log(`Retrying... (${retryCount + 1})`);
+                            return uploadWithRetry(retryCount + 1);
+                        }
+                        throw error;
                     }
-                    throw error; // Throw error if retries exhausted or different error
-                }
-            };
+                };
 
-            return uploadWithRetry(); // Call retry function
-        });
+                const response = await uploadWithRetry();
 
-        try {
-            const responses = await Promise.all(uploadPromises);
-
-            // Download all beautified images after successful uploads
-            for (const response of responses) {
                 // Create a Blob from the response with the correct MIME type
                 const blob = new Blob([response.data], { type: 'image/png' });
 
                 // Create an object URL for the blob
                 const url = window.URL.createObjectURL(blob);
 
+                // Create a link to download the image
+                const link = document.createElement('a');
+                link.href = url;
+
                 // Generate a unique filename
                 const filename = 'unbgme-' + uuidv4() + '.png';
+                link.setAttribute('download', filename);
 
-                // Trigger download with a small delay to ensure multiple downloads work
-                setTimeout(() => {
-                    triggerDownload(url, filename);
-                }, 500); // 500ms delay between each download
+                // Append link to the document and trigger click to download the image
+                document.body.appendChild(link);
+                link.click();
+
+                // Clean up: remove the link and revoke the object URL
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                setUploadStatus(prev => ({ ...prev, [file.uid]: 'finished' }));
+            } catch (error) {
+                message.error(`Failed to upload ${file.name}`);
+                setUploadStatus(prev => ({ ...prev, [file.uid]: 'failed' }));
             }
-
-            message.success('All images have been processed and downloaded!');
-            // Clear list with uploaded files
-            setFiles([]);
-        } catch (error) {
-            message.error('Failed to upload some images.');
-        } finally {
-            setLoading(false);
         }
+
+        // Clear list with uploaded files
+        setFiles([]);
+        message.success('All images have been processed and downloaded!');
+        setLoading(false);
     };
 
     return (
@@ -118,6 +110,23 @@ export default function Page() {
                 </Button>
 
                 {loading && <Spin tip="Processing images..." style={{ marginTop: 16 }} />}
+
+                <div className="file-status">
+                    {files.map(file => (
+                        <div key={file.uid} style={{ marginTop: 16 }}>
+                            <img
+                                src={URL.createObjectURL(file.originFileObj)}
+                                alt={file.name}
+                                style={{ width: 100, height: 100, objectFit: 'cover' }}
+                            />
+                            <p>
+                                {uploadStatus[file.uid] === 'started' && 'Uploading...'}
+                                {uploadStatus[file.uid] === 'finished' && 'Done!'}
+                                {uploadStatus[file.uid] === 'failed' && 'Failed'}
+                            </p>
+                        </div>
+                    ))}
+                </div>
             </section>
         </main>
     );
