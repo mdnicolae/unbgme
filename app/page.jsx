@@ -11,6 +11,24 @@ export default function Page() {
 
     const uploadServer = `https://api.nicolae.tech/api/upload`; // Your backend URL
 
+    // Helper function to trigger file download
+    const triggerDownload = (url, filename) => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+
+        // Check for mobile browser to handle download differently
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            window.open(url); // Mobile browser fallback
+        } else {
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.URL.revokeObjectURL(url);
+    };
+
     // Handle file upload
     const handleUpload = async () => {
         if (files.length === 0) {
@@ -43,34 +61,25 @@ export default function Page() {
             return uploadWithRetry(); // Call retry function
         });
 
-
         try {
             const responses = await Promise.all(uploadPromises);
 
             // Download all beautified images after successful uploads
-            responses.forEach(response => {
+            for (const response of responses) {
                 // Create a Blob from the response with the correct MIME type
                 const blob = new Blob([response.data], { type: 'image/png' });
 
                 // Create an object URL for the blob
                 const url = window.URL.createObjectURL(blob);
 
-                // Create a link to download the image
-                const link = document.createElement('a');
-                link.href = url;
-
                 // Generate a unique filename
                 const filename = 'unbgme-' + uuidv4() + '.png';
-                link.setAttribute('download', filename);
 
-                // Append link to the document and trigger click to download the image
-                document.body.appendChild(link);
-                link.click();
-
-                // Clean up: remove the link and revoke the object URL
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-            });
+                // Trigger download with a small delay to ensure multiple downloads work
+                setTimeout(() => {
+                    triggerDownload(url, filename);
+                }, 500); // 500ms delay between each download
+            }
 
             message.success('All images have been processed and downloaded!');
             // Clear list with uploaded files
@@ -81,7 +90,6 @@ export default function Page() {
             setLoading(false);
         }
     };
-
 
     return (
         <main className="flex flex-col gap-8 sm:gap-16">
@@ -104,7 +112,7 @@ export default function Page() {
                     onClick={handleUpload}
                     disabled={files.length === 0}
                     type="primary"
-                    className="btn btn-lg btn-primary sm:btn-wide"
+                    className="btn btn-lg btn-primary sm:btn-wide mt-4"
                 >
                     unbg.me
                 </Button>
