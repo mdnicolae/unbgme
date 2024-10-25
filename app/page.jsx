@@ -1,5 +1,5 @@
 "use client"; // This is a client component 👈🏽
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { message, Upload } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import heic2any from 'heic2any';
@@ -9,28 +9,37 @@ import { v4 as uuidv4 } from 'uuid';
 export default function Page() {
     const [files, setFiles] = useState([]);
     const [uploadStatus, setUploadStatus] = useState({}); // Track status for each file
+    const [isClient, setIsClient] = useState(false);
 
     const uploadServer = `https://api.nicolae.tech/api/upload`;
 
-    // Retry mechanism for file upload
+    // Check if we are on the client side
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     const uploadWithRetry = async (file, maxRetries = 3) => {
         const formData = new FormData();
         let fileObj = file.originFileObj;
-        //Convert if it is heic or heif to png
-       if (fileObj.type === 'image/heic' || fileObj.type === 'image/heif') {
-           console.log('Converting HEIC/HEIF to PNG...')
-            await heic2any(
-                fileObj,
-                { toType: 'image/png', quality: 0.5 },
-                async function(error, result) {
-                    if (error) {
-                        console.log('Error: ', error);
-                    } else {
-                        fileObj = new File([result], fileObj.name, { type: 'image/png' });
-                    }
-                }
-            )
-       }
+
+        // Convert HEIC/HEIF to PNG if necessary
+        if (fileObj.type === 'image/heic' || fileObj.type === 'image/heif') {
+            console.log('Converting HEIC/HEIF to PNG...');
+            try {
+                const conversionResult = await heic2any({
+                    blob: fileObj,
+                    toType: 'image/png',
+                    quality: 0.5,
+                });
+
+                // Wrap conversionResult in a new File object with a new name and type
+                fileObj = new File([conversionResult], `${uuidv4()}.png`, { type: 'image/png' });
+                console.log(fileObj);
+            } catch (error) {
+                console.log('Error converting HEIC/HEIF to PNG:', error);
+                throw error;
+            }
+        }
 
         formData.append('file', fileObj);
 
@@ -52,7 +61,7 @@ export default function Page() {
     };
 
     const handleUpload = async () => {
-        if (files.length === 0) {
+        if (!isClient || files.length === 0) {
             message.error('Please select images first.');
             return;
         }
@@ -63,19 +72,20 @@ export default function Page() {
             try {
                 const response = await uploadWithRetry(file);
 
-                // Handle successful file upload (download logic)
-                const blob = new Blob([response.data], { type: 'image/png' });
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                const filename = 'unbgme-' + uuidv4() + '.png';
-                link.setAttribute('download', filename);
+                if (typeof window !== 'undefined') {
+                    // Create download link and initiate download
+                    const blob = new Blob([response.data], { type: 'image/png' });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    const filename = `unbgme-${uuidv4()}.png`;
+                    link.setAttribute('download', filename);
 
-                // Trigger the download
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                }
 
                 setUploadStatus(prev => ({ ...prev, [file.uid]: 'done' }));
             } catch (error) {
@@ -114,7 +124,6 @@ export default function Page() {
 
     return (
         <main className="flex flex-col gap-8 sm:gap-16">
-
             <section className="flex flex-col items-start gap-3 sm:gap-4 mt-10">
                 <h1 className="mb-3">Easily remove background to any image using LLMs</h1>
                 <p>All of the images are processed and returned by the server directly. We don&#39;t store any images.</p>
