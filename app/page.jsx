@@ -1,8 +1,7 @@
 "use client"; // This is a client component 👈🏽
 import { useState } from 'react';
-import { message, Upload } from 'antd';
+import { Button, message, Spin, Upload } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import heic2any from 'heic2any';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,24 +14,7 @@ export default function Page() {
     // Retry mechanism for file upload
     const uploadWithRetry = async (file, maxRetries = 3) => {
         const formData = new FormData();
-        let fileObj = file.originFileObj;
-        //Convert if it is heic or heif to png
-       if (fileObj.type === 'image/heic' || fileObj.type === 'image/heif') {
-           console.log('Converting HEIC/HEIF to PNG...')
-            await heic2any(
-                fileObj,
-                { toType: 'image/png', quality: 0.5 },
-                async function(error, result) {
-                    if (error) {
-                        console.log('Error: ', error);
-                    } else {
-                        fileObj = new File([result], fileObj.name, { type: 'image/png' });
-                    }
-                }
-            )
-       }
-
-        formData.append('file', fileObj);
+        formData.append('file', file.originFileObj);
 
         let retries = 0;
         while (retries <= maxRetries) {
